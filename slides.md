@@ -20,15 +20,23 @@ drawings:
 transition: slide-left
 # enable MDC Syntax: https://sli.dev/features/mdc
 mdc: true
+fonts:
+  # basically the text
+  sans: Robot
+  # use with `font-serif` css class from UnoCSS
+  serif: Robot Slab
+  # for code blocks, inline code, etc.
+  mono: Fira Code
 ---
 
-# Liquid Haskell
+# Verified Functional Data Structures
+## (Priority Queues in Liquid Haskell)
 
-Mehran Shahidi, Saba Safarnezhad
+Mehran Shahidi
 
 Supervised by
 
-Cass Alexandru, M.Sc.
+Prof. Dr. Ralf Hinze
 
 <!-- <div @click="$slidev.nav.next" class="mt-12 py-1" hover:bg="white op-10">
   Press Space for next page <carbon:arrow-right />
