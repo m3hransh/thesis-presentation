@@ -1,52 +1,33 @@
 ---
-# You can also start simply with 'default'
-theme: seriph
-# random image from a curated Unsplash collection by Anthony
-# like them? see https://unsplash.com/collections/94734566/slidev
-# background: https://cover.sli.dev
-# some information about your slides (markdown enabled)
-title: Liquid Haskell
+title: Verified Priority Queues in LiquidHaskell
 info: |
-  ## Slidev Starter Template
-  Presentation slides for developers.
-
-  Learn more at [Sli.dev](https://sli.dev)
-# apply unocss classes to the current slide
+  ## Master's Thesis Presentation
+  Verification of Priority Queue Implementations in LiquidHaskell
 class: text-center
-# https://sli.dev/features/drawing
 drawings:
   persist: false
-# slide transition: https://sli.dev/guide/animations.html#slide-transitions
 transition: slide-left
-# enable MDC Syntax: https://sli.dev/features/mdc
 mdc: true
 fonts:
-  # basically the text
-  sans: Robot
-  # use with `font-serif` css class from UnoCSS
+  sans: Inter
   serif: Robot Slab
-  # for code blocks, inline code, etc.
   mono: Fira Code
+level: 3
 ---
 
-# Verified Functional Data Structures
-## (Priority Queues in Liquid Haskell)
+# Verified Priority Queues in LiquidHaskell
 
-Mehran Shahidi
+## Mehran Shahidi
 
 Supervised by
 
-Prof. Dr. Ralf Hinze
-
-<!-- <div @click="$slidev.nav.next" class="mt-12 py-1" hover:bg="white op-10">
-  Press Space for next page <carbon:arrow-right />
-</div> -->
+### Prof. Dr. Ralf Hinze
 
 <div class="abs-br m-6 text-xl">
   <button @click="$slidev.nav.openInEditor" title="Open in Editor" class="slidev-icon-btn">
     <carbon:edit />
   </button>
-  <a href="https://github.com/m3hransh/seminar-pl/" target="_blank" class="slidev-icon-btn">
+  <a href="https://github.com/m3hransh/pq_verification/" target="_blank" class="slidev-icon-btn">
     <carbon:logo-github />
   </a>
 </div>
@@ -62,137 +43,195 @@ h1 {
   -moz-text-fill-color: transparent;
 }
 </style>
-<!--
-The last comment block of each slide will be treated as slide notes. It will be visible and editable in Presenter Mode along with the slide. [Read more in the docs](https://sli.dev/guide/syntax.html#notes)
--->
 
 ---
 transition: fade-out
+class: text-xl
+level: 3
 ---
 
-# What is LiquidHaskell?
+# Motivation
 
-Liquid Haskell is a program verifier for haskell that has following features:
-
-<br>
-
-- 📝 **Refinement Types** - Refines haskell types with logical predicates
-- 🔣 **SMT-Solver** -  SAT + Theores (Uninterpreted Functions , Arithmetic , Arrays, Algebraic Datatypes, ...)
-- 📤 **GHC-Plugin** - You can use LH via LSP or on compilation
-- 🤔 **Reflection** - Allows to lift functions in haskell into decidable logic realm
-- 🟰 **Proof by Logical Evaluation (PLE)** - Empowers LiquidHaskell as a theorem prover by automating logical evaluations. 
+### **Program verification** is the process of proving that a program adheres to its intended specifications
 
 <br>
+<v-click>
 
+### **Data structure verification** is the process of proving that a data structure and its operations always satisfy their intended specifications and invariants.
 
-<!-- Read more about [Why Slidev?](https://sli.dev/guide/why) -->
-
-<!--
-You can have `style` tag in markdown to override the style for the current page.
-Learn more: https://sli.dev/features/slide-scope-style
--->
-
-<style>
-h1 {
-  background-color:rgba(184, 39, 175, 0.71);
-  background-image: linear-gradient(45deg, #4EC5D4 10%, #146b8c 20%);
-  background-size: 100%;
-  -webkit-background-clip: text;
-  -moz-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  -moz-text-fill-color: transparent;
-}
-</style>
-
-<!--
-Here is another comment.
--->
-
-
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
+</v-click>
 
 ---
 level: 3
 ---
+# Motivation
+
+<div class="grid grid-cols-2 gap-2 items-center  p-5">
+    <div>
+  <div class="text-3xl">
+    “Program testing can be used to show the presence of bugs, but never to show their absence!”
+    </div>
+    <div class="text-2xl">
+   ― Edsger W. Dijkstra
+    </div>
+
+  </div>
+
+  <div class="flex justify-center">
+    <img src="/images/dijkstra.jpg" class="rounded-lg shadow-lg max-h-80" alt="Edsger W. Dijkstra" />
+  </div>
+</div>
+---
+level: 3
+---
+
+# Motivation
+## Formal Verification
+
+### Coq / Agda → powerful but heavy  
+*(new languages, new tooling, high annotation cost)*
+
+<v-click>
+
+- Most real Haskell code never gets verified because devs must switch ecosystems
+
+</v-click>
+
+<v-click>
+
+- Verification feels “separate” from normal programming
+
+</v-click>
+<v-click>
+
+- High barrier → low adoption in everyday projects
+
+</v-click>
+
+---
+transition: fade-out
+class: text-2xl
+level: 3
+---
+
+# Motivation
+
+### Goal:  
+**Verify real Haskell programs *inside* Haskell**
+
+<br>
+<br>
+<v-click> Our focus -> Data structures -> Priority Queues</v-click>
+
+---
+level: 3
+---
+
+# Motivation
+<img src="/images/haskellvsagda.jpg" class="h-100 mx-auto" />
+
+---
+level: 3
+---
+
 # Table of content
 <Toc   maxDepth='1' mode='sibling'/>
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
+
 ---
 level: 1
 ---
-# Refinement Types
 
+# What is LiquidHaskell?
+
+### Refinement types extend conventional type systems by attaching logical predicates to base types.
+
+<br>
+
+- 🔣 **SMT-Solver** - Leverages SMT-Solvers such as Z3 for automated reasoning
+- 📤 **GHC-Plugin** - Integrates with standard Haskell toolchain
+
+<br>
+
+<v-click>
+<img src="/images/LH_flow.svg" />
+</v-click>
+---
+level: 1
+zoom: 1.2
+---
+
+# Refinement type
+````md magic-move {lines: true}
+```haskell 
+lookup :: Int -> [Int] -> Int
+lookup 0 (x : _) = x
+lookup x (_ : xs) = lookup (x - 1) (xs)
+```
+```haskell
+unsafeLookup :: Int -> [Int] -> Int
+unsafeLookup 0 (x : _) = x
+unsafeLookup x (_ : xs) = unsafeLookup (x - 1) (xs)
+```
+```haskell{*|7}
+unsafeLookup :: Int -> [Int] -> Int
+unsafeLookup 0 (x : _) = x
+unsafeLookup x (_ : xs) = unsafeLookup (x - 1) (xs)
+
+lookup :: Int -> [Int] -> Maybe Int
+lookup i xs
+  | i < 0 || i >= length xs = Nothing
+  | otherwise = Just (unsafe i xs)
+```
+```haskell{1}
+lookup :: Int -> [Int] -> Int
+lookup 0 (x : _) = x
+lookup x (_ : xs) = lookup (x - 1) (xs)
+```
+```haskell{1}
+{-@ lookup :: i : Nat -> { xs : [a] | i < len xs} -> a @-}
+lookup :: Int -> [Int] -> Int
+lookup 0 (x : _) = x
+lookup x (_ : xs) = lookup (x - 1) (xs)
+```
+```haskell{1|2-12|11-12}
+lookupExample = lookup 2 [10, 21]
+>> VV : {v : [GHC.Types.Int] | v == GHC.Types.: (GHC.Types.I# 10) 
+  (GHC.Types.: (GHC.Types.I# 21) GHC.Types.[])
+  && head v == GHC.Types.I# 10
+  && len v == 1 + len (GHC.Types.: (GHC.Types.I# 21) GHC.Types.[])
+  && lqdc##$select##GHC.Types.:##1 v == GHC.Types.I# 10
+  && lqdc##$select##GHC.Types.:##2 v == GHC.Types.: (GHC.Types.I# 21) GHC.Types.[]
+  && tail v == GHC.Types.: (GHC.Types.I# 21) GHC.Types.[]
+  && len v >= 0}
+    .
+    is not a subtype of the required type
+      VV : {VV##15150 : [GHC.Types.Int] | GHC.Types.I# 2 < len VV##15150}
+```
+````
+<br>
+<img v-click="[5, 6]" src="/images/refinement.svg" class="max-h-20 mx-auto" />
+
+---
+level: 3
+zoom: 1.3
+---
+# Refinement type
+## Increasing list
 
 ````md magic-move {lines: true}
-//step 1
 ```haskell 
-tail :: [a] -> [a]
-tail (_:xs) = xs
+data IncList a 
+    = Emp 
+    | a :< IncList a
 ```
 ```haskell
-tail :: [a] -> [a]
-tail (_:xs) = xs
-tail [] = error "tail: empty list"
-```
-//step 2
-```haskell
-tail :: [a] -> Maybe [a]
-tail (_:xs) =  Just xs
-tail [] = Nothing
-```
-```haskell {5-9}
-tail :: [a] -> Maybe [a]
-tail (_:xs) =  Just xs
-tail [] = Nothing
-
--- Example list
-exampleList = [1, 2, 3, 4, 5]
-
--- always need to handle the empty case
-result = tail exampleList >>= tail >>= tail
-```
-//step 3
-```haskell {*|1}
-{-@ tail :: {v:[a] | 0 < len v} -> a @-}
-tail :: [a] -> [a]
-tail (x : _) = x
-```
-
-//step 5
-
-```haskell {5-6} 
-{-@ tail :: {v:[a] | 0 < len v} -> a @-}
-tail :: [a] -> [a]
-tail (x : _) = x
-
-x :: [Int]
-x = tail []
-```
-//step 6
-```haskell {7-18|9-11,14}
-{-@ tail :: {v:[a] | 0 < len v} -> a @-}
-tail :: [a] -> [a]
-tail (x : _) = x
-
-x :: [Int]
-x = tail []
- .
-  >> The inferred type
-  >>   VV : {v : [GHC.Types.Int] | v == ?a
-  >>                               && len v == 0
-  >>                               && len v >= 0}
-  >> .
-  >> is not a subtype of the required type
-  >>   VV : {VV##1324 : [GHC.Types.Int] | len VV##1324 > 0}
-  >> .
-  >> in the context
-  >>   ?a : {?a : [GHC.Types.Int] | len ?a == 0
-  >>                                && len ?a >= 0}
+{-@ data IncList a 
+    = Emp 
+    | (:<) { hd :: a, tl :: IncList {v : a | hd <= v}} @-}
 ```
 ````
 
@@ -204,304 +243,187 @@ x = tail []
 level: 2
 ---
 
-# Refinement Types
+# Priority Queue Interface
 
-<div class="custom-image-container" >
-<img  src="./images/RT.png">
-</div>
-
-
-<style>
-.custom-image-container {
-  display: flex;
-  justify-content: center; /* Center horizontally */
-  align-items: center;    /* Center vertically */
-}
-.custom-image-container img {
-  max-width: 80%; /* Prevent image overflow */
-  height: auto;    /* Maintain aspect ratio */
-}</style>
-
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
-
----
-level: 1
----
-
-# Propositional Logic
-- Definition: Logic with connectives ¬ (not), ∧ (and), ∨ (or), and atomic propositions (variables).
-- Purpose: Forms the foundation of the Boolean Satisfiability Problem (SAT).
-
-<br>
-
-<v-click>
-
-# SAT: Boolean Satisfiability Problem
-- Problem Statement: Given a formula in propositional logic, determine if there exists a variable assignment that makes the formula true.
-- Formula: (A∨¬B)∧(B∨C)
-- Goal: Find truth values for A, B, and C to satisfy the formula.
-- Complexity: The SAT problem is NP-complete.
-
-</v-click>
-
-
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
-<!-- NP-complete=> there is no efficient algrithem to solve it quickly, but you can verify the solution by in polynomial time
-    complete=> non determinestic polynomial time    -->
-
----
----
-
-# SAT Solvers
-<br>
-<v-clicks>
-
-- Definition: Tools that solve the SAT problem using efficient algorithms.
-
-- Core Idea: Use optimized techniques (e.g., conflict-driven clause learning) to handle large formulas.
-
-- Aplications:
-  - Formal verification
-  - Optimization problems
-  - Automated reasoning
-
-</v-clicks>
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
----
-level: 1
----
-
-# SMT: Satisfiability Modulo Theories
-Extends SAT solvers by adding theories with decision procedures, that Enables reasoning about more expressive formulas beyond pure propositional logic.
-
-<v-click>
-
-### Supported Theories
-
-</v-click>
-
-<v-clicks depth="2">
-
-  - Linear Integer Arithmetic: Deals with linear constraints over integers or real numbers (e.g., x+y≤10).
-    Fully decidable in the linear case.
-  - Non-linear Arithmetic: Includes operations like multiplication or division. Decision procedures are more limited—often undecidable in the general case but solvable for specific subclasses.
-  - Equality with Uninterpreted Functions:Abstract reasoning about function calls without implementations.
-    Useful in modular verification.(e.g.,congruence)
-  - Arrays:Models indexed collections of elements (finite maps). Includes operations like read (access) and write (update).
-  - Algebraic Data Types: Represents types constructed from other types:
-    - Product Types: Combinations of types (e.g., tuples or records).
-    - Coproduct Types: Alternatives among types (e.g., unions or sum types).
-</v-clicks>
-<br>
-<v-click>
-
-### SMT Solvers
-Examples: Z3, CVC5, MathSAT, Yices.
-
-</v-click>
-
-
-
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
-
----
-level: 1
----
-
-# Z3 Architecture
-
-<div class="custom-image-container">
-<img  src="./images/smt.svg">
-</div>
-
-
-<style>
-.custom-image-container {
-  display: flex;
-  justify-content: center; /* Center horizontally */
-  align-items: center;    /* Center vertically */
-}
-.custom-image-container img {
-  max-width: 70%; /* Prevent image overflow */
-  height: auto;    /* Maintain aspect ratio */
-}</style>
-
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
-
-<!--
-The architecture of Z3 :
-designed to solve Satisfiability Modulo Theories (SMT) problems. 
-
-Interfaces to Z3: interacted with SMT-LIB2 scripts 
-or through API calls in high-level programming languages, 
-with a focus on the Python front-end.
-
-Logical Formulas: Z3 accepts logical formulas built from atomic variables and logical connectives, integrating symbols from multiple theories. These formulas follow the SMT-LIB2 standard.
-
-Theories: Z3 supports multiple theories, 
-Equality and Uninterpreted Functions (EUF),
- Arithmetic (linear and non-linear),
- Arrays, Bit-Vectors, Algebraic Datatypes, Sequences, and Strings.
-
-Solver: Z3 provides services for deciding the satisfiability of formulas, handling incrementality, scopes, assumptions, cores, models, and more. Specialized solvers include:
-
-SMT Solver: Integrates various theories by the CDCL(T) architecture.
-
-Fixedpoint Solver: reasoning recursive 
-definitions and fixed-point computations.
-
-NLSat Solver:non-linear arithmetic problems
-
-SAT Solver: propositional logic problems.
-
-QSAT Solver: Handles quantified Boolean formulas (QBF).
-
-
-Tactics: Used for pre-processing, simplifying formulas, and creating sub-goals. Examples include:
-
-Preprocessing: Simplifies input formulas.
-
-Cube and Conquer: Partitions the search 
-space into smaller sub-problems.
-
-Tacticals: Combinators for composing 
-multiple tactics.
-
-Optimization: Z3 provides optimization 
-services to solve satisfiability 
-problems while maximizing or minimizing 
-objective functions.
-
-The architecture of Z3 is designed to be 
-flexible and powerful, supporting a wide 
-range of logical theories and providing 
-robust solver services. It allows for 
-efficient interaction through various 
-interfaces and includes advanced features
- for optimization and logical analysis.
--->
-
-
----
----
-## Z3 examples
-
-$$(Tie \lor Shirt) \land (\lnot Tie \lor Shirt) \land (\lnot Tie \lor \lnot Shirt)$$
-
-
-<br>
-<br>
-
-<div class="grid grid-cols-2 gap-4 ">
-  <div>
-
-    SMTLIB2
-
+Priority queues are multisets with efficient access to minimum element
 
 ````md magic-move {lines: true}
-
-```lisp 
-  (set-logic QF_UF)
-  (declare-const Tie Bool)
-  (declare-const Shirt Bool)
-  (assert (or Tie Shirt))
-  (assert (or (not Tie) Shirt))
-  (assert (or (not Tie) (not Shirt)))
-  (check-sat)
-  (get-model)
-
+```haskell
+class PriorityQueue pq where
+  empty    :: (Ord a) => pq a
+  isEmpty  :: (Ord a) => pq a -> Bool
+  insert   :: (Ord a) => a -> pq a -> pq a
+  merge    :: (Ord a) => pq a -> pq a -> pq a
+  findMin  :: (Ord a) => pq a -> Maybe a
+  splitMin :: (Ord a) => pq a -> MinView pq a
 ```
-```lisp {10-14}
-  (set-logic QF_UF)
-  (declare-const Tie Bool)
-  (declare-const Shirt Bool)
-  (assert (or Tie Shirt))
-  (assert (or (not Tie) Shirt))
-  (assert (or (not Tie) (not Shirt)))
-  (check-sat)
-  (get-model)
+```haskell {*|9-13}
+class PriorityQueue pq where
+  empty    :: (Ord a) => pq a
+  isEmpty  :: (Ord a) => pq a -> Bool
+  insert   :: (Ord a) => a -> pq a -> pq a
+  merge    :: (Ord a) => pq a -> pq a -> pq a
+  findMin  :: (Ord a) => pq a -> Maybe a
+  splitMin :: (Ord a) => pq a -> MinView pq a
 
->>   sat
->>   (model
->>     (define-fun Tie () Bool false)
->>     (define-fun Shirt () Bool true)
->>   )
+data MinView q a
+  = EmptyView 
+  | Min { minValue :: a, restHeap :: q a }
 ```
-
 ````
 
-  </div>
-  <div>
+<br>
 
-    Python
+<v-click>
 
-````md magic-move {lines: true}
-```python 
+**Two Implementations:**
+1. **Leftist Heaps** - Simple binary tree with rank invariant
+2. **Binomial Heaps** - Compositional structure with three layers
 
-  from z3 import Bools, Solver, Or, Not
-  Tie, Shirt = Bools('Tie Shirt')
-  s = Solver()
-  s.add(Or(Tie, Shirt),
-        Or(Not(Tie), Shirt),
-        Or(Not(Tie), Not(Shirt)))
-  print(s.check())
-  print(s.model())
-```
-
-```python {10-13}
-
-  from z3 import Bools, Solver, Or, Not
-  Tie, Shirt = Bools('Tie Shirt')
-  s = Solver()
-  s.add(Or(Tie, Shirt),
-        Or(Not(Tie), Shirt),
-        Or(Not(Tie), Not(Shirt)))
-  print(s.check())
-  print(s.model())
-
->>  sat
->>
->>  [Tie = False, Shirt = True]
-```
-````
-  </div>
-</div>
+</v-click>
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
 
 ---
+level: 2
 ---
-## SMT example of Equality and Uninterpreted Function
-<br>
-<br>
+
+# Leftist Heap Structure
+
+<div class="grid grid-cols-[4fr_3fr] gap-6 items-center">
+<div>
+
+**Invariants**
+1. **Heap Property**: `value ≤ all children` 
+2. **Leftist Property**: 
+`rank(right) ≤ rank(left)` 
+3. **Rank Definition**: `rank = 1 + rank(right)`
+
+</div>
+
+<div>
+   <img src="/images/LeftistHeap.svg" />
+</div>
+
+</div>
+
+---
+level: 2
+---
+
+# Leftist Heap Implementation
+
+
+
 
 ````md magic-move {lines: true}
-
-```python
- S = DeclareSort('S')
- f = Function('f', S, S)
- x = Const('x', S)
- solve(f(f(x)) == x, f(f(f(x))) == x)
- solve(f(f(x)) == x, f(f(f(x))) == x, f(x) != x)
+```haskell
+data LeftistHeap a 
+  = EmptyHeap
+  | HeapNode { value :: a
+             , left  :: LeftistHeap a
+             , right :: LeftistHeap a
+             , rank  :: Int
+             }
 ```
-```python {4-5}
- S = DeclareSort('S')
- f = Function('f', S, S)
- x = Const('x', S)
- solve(f(f(x)) == x, f(f(f(x))) == x) # can be solved when f is `identity`
- solve(f(f(x)) == x, f(f(f(x))) == x, f(x) != x) # there is no solution
+```haskell {*|4}
+{-@ data LeftistHeap a = EmptyHeap
+  | HeapNode 
+    { value :: a
+    , left  :: LeftistHeapBound a value
+    , right :: {v:LeftistHeapBound a value | rrank v <= rrank left}
+    , rank  :: {r:Nat | r == 1 + rrank right}
+    }
+@-}
+```
+```haskell {10-14}
+{-@ data LeftistHeap a = EmptyHeap
+  | HeapNode 
+    { value :: a
+    , left  :: LeftistHeapBound a value
+    , right :: {v:LeftistHeapBound a value | rrank v <= rrank left}
+    , rank  :: {r:Nat | r == 1 + rrank right}
+    }
+@-}
+
+{-@ type LeftistHeapBound a X = { h : LeftistHeap a | isLowerBound X h} @-}
+{-@ reflect isLowerBound @-}
+isLowerBound :: (Ord a) => a -> LeftistHeap a -> Bool
+isLowerBound _ EmptyHeap = True
+isLowerBound v (HeapNode x l r _) = v <= x && isLowerBound v l && isLowerBound v r
+```
+```haskell {5|6}
+{-@ data LeftistHeap a = EmptyHeap
+  | HeapNode 
+    { value :: a
+    , left  :: LeftistHeapBound a value
+    , right :: {v : LeftistHeapBound a value | rrank v <= rrank left}
+    , rank  :: {r:Nat | r == 1 + rrank right}
+    }
+@-}
+```
+````
+1. **Heap Property**: `value ≤ all children` 
+2. **Leftist Property**: 
+`rank(right) ≤ rank(left)` 
+3. **Rank Definition**: `rank = 1 + rank(right)`
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
+---
+level: 2
+---
+
+# Measures and Reflection
+
+**Measures** project data structures into the logic:
+
+````md magic-move {lines: true}
+```haskell
+-- Size measure for termination
+{-@ measure size @-}
+{-@ size :: LeftistHeap a -> Nat @-}
+size :: LeftistHeap a -> Int
+size EmptyHeap = 0
+size (HeapNode _ l r _) = 1 + size l + size r
+```
+```haskell {*|8-12}
+-- Size measure for termination
+{-@ measure size @-}
+{-@ size :: LeftistHeap a -> Nat @-}
+size :: LeftistHeap a -> Int
+size EmptyHeap = 0
+size (HeapNode _ l r _) = 1 + size l + size r
+
+-- Bag (multiset) to track elements
+{-@ reflect bag @-}
+bag :: (Ord a) => LeftistHeap a -> Bag a
+bag EmptyHeap = B.empty
+bag (HeapNode x l r _) = B.put x (B.union (bag l) (bag r))
+```
+```haskell {*|14-18}
+-- Size measure for termination
+{-@ measure size @-}
+size :: LeftistHeap a -> Int
+size EmptyHeap = 0
+size (HeapNode _ l r _) = 1 + size l + size r
+
+-- Bag (multiset) to track elements
+{-@ reflect bag @-}
+bag :: (Ord a) => LeftistHeap a -> Bag a
+bag EmptyHeap = B.empty
+bag (HeapNode x l r _) = B.put x (B.union (bag l) (bag r))
+
+-- Lower bound predicate  
+{-@ reflect isLowerBound @-}
+isLowerBound :: (Ord a) => a -> LeftistHeap a -> Bool
+isLowerBound _ EmptyHeap = True
+isLowerBound v (HeapNode x l r _) = 
+  v <= x && isLowerBound v l && isLowerBound v r
 ```
 ````
 
@@ -512,441 +434,747 @@ $$(Tie \lor Shirt) \land (\lnot Tie \lor Shirt) \land (\lnot Tie \lor \lnot Shir
 ---
 layout: section
 ---
-# Verifying Insertion Sort
+# Verifying Leftist Heap Merge
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
+
 ---
 level: 2
 ---
 
-## Add LH as plugin to GHC
+## Heap Merge Implementation
 
 
-<div px-30 py-20>
-
-```json {*|9-11|16}
- // .cabal 
- cabal-version: 1.12
-
- name:           lh-plugin-demo
- version:        0.1.0.0
- ...
- ...
-   build-depends:
-       liquid-prelude,
-       liquid-vector,
-       liquidhaskell,
-       base,
-       containers,
-       vector
-   default-language: Haskell2010
-   ghc-options:  -fplugin=LiquidHaskell
-```
-</div>
-
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
----
-level: 2
-transition: fade-out
----
-
-
-## Defining insertion sort
-
-<div px-30 py-20>
 
 ````md magic-move {lines: true}
 
+```haskell
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+    | x1 <= x2 = makeHeapNode x1 l1 (heapMerge r1 h2)
+    | otherwise = makeHeapNode x2 l2 (heapMerge h1 r2)
+```
+```haskell{8-13}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+    | x1 <= x2 = makeHeapNode x1 l1 (heapMerge r1 h2)
+    | otherwise = makeHeapNode x2 l2 (heapMerge h1 r2)
+
+makeHeapNode :: a -> LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+makeHeapNode x h1 h2
+    | rrank h1 >= rrank h2 = HeapNode x h1 h2 (rrank h2 + 1)
+    | otherwise = HeapNode x h2 h1 (rrank h1 + 1)
+```
+
+```haskell{8-11|5-6}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+    | x1 <= x2 = makeHeapNode x1 l1 (heapMerge r1 h2)
+    | otherwise = makeHeapNode x2 l2 (heapMerge h1 r2)
+
+makeHeapNode :: x : a
+-> {h : LeftistHeap a | isLowerBound x h}
+-> {h : LeftistHeap a | isLowerBound x h}
+-> {h : LeftistHeap a | isLowerBound x h}
+makeHeapNode x h1 h2
+    | rrank h1 >= rrank h2 = HeapNode x h1 h2 (rrank h2 + 1)
+    | otherwise = HeapNode x h2 h1 (rrank h1 + 1)
+```
+
+```haskell {8-11}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+  | x1 <= x2 = makeHeapNode x1 l1 ((heapMerge r1 h2)
+  | otherwise = makeHeapNode x2 l2 ((heapMerge h1 r2)
+
+{-@ predicate HeapMergeMin H1 H2 H = 
+  ((not (heapIsEmpty H1) && not (heapIsEmpty H2)) => 
+    isLowerBound (min (heapFindMin H1) (heapFindMin H2)) H)
+@-}
+```
+```haskell {13-15}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+  | x1 <= x2 = makeHeapNode x1 l1 ((heapMerge r1 h2)
+  | otherwise = makeHeapNode x2 l2 ((heapMerge h1 r2)
+
+{-@ predicate HeapMergeMin H1 H2 H = 
+  ((not (heapIsEmpty H1) && not (heapIsEmpty H2)) => 
+    isLowerBound (min (heapFindMin H1) (heapFindMin H2)) H)
+@-}
+
+{-@ predicate BagUnion H1 H2 H = 
+  (bag H == B.union (bag H1) (bag H2))
+@-}
+```
+```haskell{1-2}
+{-@ heapMerge :: h1:LeftistHeap a -> h2:LeftistHeap a
+  -> {h:LeftistHeap a | (HeapMergeMin h1 h2 h) && (BagUnion h1 h2 h)} @-}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+  | x1 <= x2 = makeHeapNode x1 l1 ((heapMerge r1 h2)
+  | otherwise = makeHeapNode x2 l2 ((heapMerge h1 r2)
+```
+```haskell{8-11}
+{-@ heapMerge :: h1:LeftistHeap a -> h2:LeftistHeap a
+  -> {h:LeftistHeap a | (HeapMergeMin h1 h2 h) && (BagUnion h1 h2 h)} @-}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+  | x1 <= x2 = makeHeapNode x1 l1 ((heapMerge r1 h2)
+      `withProof` lemma_merge_case1 x1 x2 r1 h2)
+  | otherwise = makeHeapNode x2 l2 ((heapMerge h1 r2)
+      `withProof` lemma_merge_case2 x2 x1 r2 h1)
+```
+
+```haskell{12-13}
+{-@ heapMerge :: h1:LeftistHeap a -> h2:LeftistHeap a
+  -> {h:LeftistHeap a | (HeapMergeMin h1 h2 h) && (BagUnion h1 h2 h)} @-}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+  | x1 <= x2 = makeHeapNode x1 l1 ((heapMerge r1 h2)
+      `withProof` lemma_merge_case1 x1 x2 r1 h2)
+  | otherwise = makeHeapNode x2 l2 ((heapMerge h1 r2)
+      `withProof` lemma_merge_case2 x2 x1 r2 h1)
+
+{-@ lemma_merge_case1 :: x1 : a  -> x2 : {a | x1 <= x2}  -> r1 : LeftistHeapBound a x1 
+    -> h2 : { LeftistHeapBound a x2 | not (heapIsEmpty h2)} -> {isLowerBound x1 (heapMerge r1 h2)} @-}
+```
+```haskell{14-23}
+{-@ heapMerge :: h1:LeftistHeap a -> h2:LeftistHeap a
+  -> {h:LeftistHeap a | (HeapMergeMin h1 h2 h) && (BagUnion h1 h2 h)} @-}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+  | x1 <= x2 = makeHeapNode x1 l1 ((heapMerge r1 h2)
+      `withProof` lemma_merge_case1 x1 x2 r1 h2)
+  | otherwise = makeHeapNode x2 l2 ((heapMerge h1 r2)
+      `withProof` lemma_merge_case2 x2 x1 r2 h1)
+
+{-@ lemma_merge_case1 :: x1 : a  -> x2 : {a | x1 <= x2}  -> r1 : LeftistHeapBound a x1 
+    -> h2 : { LeftistHeapBound a x2 | not (heapIsEmpty h2)} -> {isLowerBound x1 (heapMerge r1 h2)} @-}
+lemma_merge_case1 x1 x2 EmptyHeap h2    
+    = isLowerBound x1 (heapMergeEmptyHeap h2)
+    ? lemma_isLowerBound_transitive x1 x2 h2
+    *** QED
+lemma_merge_case1 x1 x2 r1@(HeapNode _ _ _ _) h2@(HeapNode _ _ _ _) 
+    = isLowerBound x1 (heapMerged)
+    ? ( lemma_isLowerBound_transitive x1 (min (heapFindMin r1) (heapFindMin h2)) (heapMerged))
+    *** QED
+        where
+            heapMerged = heapMerge r1 h2
+```
+```haskell{3,15}
+{-@ heapMerge :: h1:LeftistHeap a -> h2:LeftistHeap a
+    -> {h:LeftistHeap a | (HeapMergeMin h1 h2 h) && (BagUnion h1 h2 h)} 
+    / [size r1 , size h2 , 0] @-}
+heapMerge :: (Ord a) => LeftistHeap a -> LeftistHeap a -> LeftistHeap a
+heapMerge EmptyHeap h2 = h2
+heapMerge h1 EmptyHeap = h1
+heapMerge h1@(HeapNode x1 l1 r1 _) h2@(HeapNode x2 l2 r2 _)
+  | x1 <= x2 = makeHeapNode x1 l1 ((heapMerge r1 h2)
+      `withProof` lemma_merge_case1 x1 x2 r1 h2)
+  | otherwise = makeHeapNode x2 l2 ((heapMerge h1 r2)
+      `withProof` lemma_merge_case2 x2 x1 r2 h1)
+
+{-@ lemma_merge_case1 :: x1 : a  -> x2 : {a | x1 <= x2}  -> r1 : LeftistHeapBound a x1 
+    -> h2 : { LeftistHeapBound a x2 | not (heapIsEmpty h2)} -> {isLowerBound x1 (heapMerge r1 h2)} 
+    / [size r1 , size h2 , 1] @-} 
+lemma_merge_case1 x1 x2 EmptyHeap h2    
+    = isLowerBound x1 (heapMergeEmptyHeap h2)
+    ? lemma_isLowerBound_transitive x1 x2 h2
+    *** QED
+lemma_merge_case1 x1 x2 r1@(HeapNode _ _ _ _) h2@(HeapNode _ _ _ _) 
+    = isLowerBound x1 (heapMerged)
+    ? ( lemma_isLowerBound_transitive x1 (min (heapFindMin r1) (heapFindMin h2)) (heapMerged))
+    *** QED
+        where
+            heapMerged = heapMerge r1 h2
+```
+
+````
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
+---
+level: 2
+---
+
+## Proving Lower Bound Transitivity
+
+Core lemma for heap merge verification:
+
+````md magic-move {lines: true}
+```haskell
+-- If x ≤ y and y is lower bound of h, then x is lower bound of h
+{-@ lemma_isLowerBound_transitive :: x:a 
+    -> y:{a | x <= y} 
+    -> h:{LeftistHeap a | isLowerBound y h}
+    -> {isLowerBound x h}
+@-}
+lemma_isLowerBound_transitive x y EmptyHeap = ()
+lemma_isLowerBound_transitive x y (HeapNode z l r _) = 
+  lemma_isLowerBound_transitive x y l 
+    &&& lemma_isLowerBound_transitive x y r 
+    *** QED
+```
+````
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
+---
+level: 2
+---
+
+## Other Leftist Heap Operations
+
+Insert and splitMin build on merge:
+
+````md magic-move {lines: true}
+```haskell
+{-@ heapInsert :: x:a -> h1:LeftistHeap a
+  -> {h:LeftistHeap a | 
+        not (heapIsEmpty h1) => 
+          isLowerBound (min x (heapFindMin h1)) h
+        && bag h = B.put x (bag h1)}
+@-}
+heapInsert :: (Ord a) => a -> LeftistHeap a -> LeftistHeap a
+heapInsert x h = heapMerge (HeapNode x EmptyHeap EmptyHeap 1) h
+```
+```haskell {*}
+{-@ heapSplit :: h:LeftistHeap a 
+  -> {s:MinView LeftistHeap a | 
+       (heapIsEmpty h => isEmptyView s) &&
+       (not (heapIsEmpty h) => 
+          getMinValue s == heapFindMin h &&
+          bag h == B.put (getMinValue s) (bag (getRestHeap s)))}
+@-}
+heapSplit :: (Ord a) => LeftistHeap a -> MinView LeftistHeap a
+heapSplit EmptyHeap = EmptyView
+heapSplit (HeapNode x l r _) = Min x (heapMerge l r)
+```
+````
+
+✅ **Result**: All leftist heap operations verified with minimal lemmas!
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
+---
+layout: section
+---
+
+# Binomial Heaps Verification
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
+---
+level: 2
+---
+
+## Binomial Heap Structure
+
+<div v-click.hide ="1">
+<img  src="/images/BinomialHeap.svg" class=" absolute max-h-90 mx-auto" />
+</div>
+<div v-click="1">
+<img  src="/images/BinomialHeap2.svg" class="absolute max-h-90 mx-auto" />
+</div>
+
+
+<div class="absolute text-3xl ml-10 bottom-0" v-click="2">
+
+$$1 \times 2^3 + 0 \times 2 ^2 + 1 \times 2^1 + 1 \times 2^0 = 11$$
+
+</div>
+
+<style>
+.katex {
+color: #12b886;
+}
+</style>
+
+---
+level: 2
+---
+
+# Pennant Structure
+
+<div class="grid grid-cols-[4fr_3fr] gap-6 items-center">
+<div>
+
+**Invariants**
+1. **Minimum Property**: `root ≤ all children` 
+2. **Left-ordering Property**:  `value ≤ left child` 
+3. **Perfect Bin Tree**: `height(left) = height(right)`
+
+</div>
+
+<div>
+   <img src="/images/Pennant.svg" />
+</div>
+
+</div>
+
+---
+level: 2
+zoom: 1.2
+---
+
+## Binomial Heap Implementation
+
+````md magic-move {lines: true}
+```haskell
+data BinTree a 
+    = Empty
+    | Bin { value  :: a
+        , left   :: BinTreeBound a value
+        , right  :: BinTreeHeight a (bheight left)
+        , height :: {h:Nat | h == 1 + bheight right}
+        }
+```
+```haskell {*|9-16}
+data BinTree a 
+    = Empty
+    | Bin { value  :: a
+        , left   :: BinTreeBound a value
+        , right  :: BinTreeHeight a (bheight left)
+        , height :: {h:Nat | h == 1 + bheight right}
+        }
+
+data Pennant a =
+  P { root    :: a
+    , pheight :: Nat
+    , bin     :: {b:BinTreeBound a root | bheight b + 1 == pheight}
+    }
+```
+```haskell {*}
+data BinomialHeap a 
+    = Nil
+    | Cons { hd :: BinomialBit a
+         , tl :: {bs:BinomialHeap a |
+                  not (heapIsEmpty bs) =>
+                    rank (bhead bs) = rank hd + 1}
+         }
+
+
+data BinomialBit a 
+  = Zero { zorder :: Nat }
+  | One  { oorder :: Nat
+         , pennant :: {p:Pennant a | pheight p == oorder}
+         }
+```
+````
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
+---
+level: 2
+zoom: 1.2
+---
+
+## Linking Pennants
+
+Merging two equal-rank pennants into rank+1:
+
+````md magic-move {lines: true}
+```haskell
+{-@ link :: Ord a => 
+      t1:Pennant a
+   -> t2:{Pennant a | pheight t2 == pheight t1}
+   -> {v:Pennant a | pheight v == pheight t1 + 1 
+                     && BagUnion t1 t2 v}
+@-}
+link :: (Ord a) => Pennant a -> Pennant a -> Pennant a
+link (P x1 h1 t1) (P x2 h2 t2)
+  | x1 <= x2 = P x1 (h1 + 1) (Bin x2 t2 t1 h1)
+  | otherwise = P x2 (h1 + 1) (Bin x1 t1 t2 h1)
+```
+```haskell {9-12|*}
+{-@ link :: Ord a => 
+      t1:Pennant a
+   -> t2:{Pennant a | pheight t2 == pheight t1}
+   -> {v:Pennant a | pheight v == pheight t1 + 1 
+                     && BagUnion t1 t2 v}
+@-}
+link :: (Ord a) => Pennant a -> Pennant a -> Pennant a
+link (P x1 h1 t1) (P x2 h2 t2)
+  | x1 <= x2 = P x1 (h1 + 1) (Bin x2 t2 t1 h1)
+       `withProof` lemma_isLowerBound_transitive x1 x2 t2
+  | otherwise = P x2 (h1 + 1) (Bin x1 t1 t2 h1)
+       `withProof` lemma_isLowerBound_transitive x2 x1 t1
+```
+````
+
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
+---
+level: 2
+---
+
+## Bit-Level Arithmetic
+
+Heap merge as ripple-carry addition:
+
+````md magic-move {lines: true}
+```haskell {*|8-15}
+-- Bits can be Zero or One (with pennant)
+data BinomialBit a 
+  = Zero { zorder :: Nat }
+  | One  { oorder :: Nat
+         , pennant :: {p:Pennant a | pheight p == oorder}
+         }
+
+{-@ bSum :: b1:BinomialBit a -> b2:{BinomialBit a | rank b2 == rank b1} 
+  -> {b:BinomialBit a | rank b == rank b1}
+@-}
+
+{-@ reflect bCarry @-}
+{-@ bCarry :: Ord a => b1:BinomialBit a -> b2:{BinomialBit a | rank b2 == rank b1} 
+  -> {b:BinomialBit a | rank b == rank b1 + 1}
+@-}
+```
+```haskell
+
+{-@ bSum :: b1:BinomialBit a -> b2 : {BinomialBit a | rank b2 == rank b1} 
+  -> {b:BinomialBit a | rank b == rank b1}
+@-}
+
+{-@ bCarry :: Ord a => b1 : BinomialBit a -> b2 : {BinomialBit a | rank b2 == rank b1} 
+  -> {b:BinomialBit a | rank b == rank b1 + 1}
+@-}
+
+{-@ bFullAdder :: b1:BinomialBit a -> b2 : {BinomialBit a | rank b2 == rank b1}
+           -> c:{BinomialBit a | rank c == rank b1}
+           -> ({s:BinomialBit a | rank s == rank b1}, 
+               {co:BinomialBit a | rank co == rank b1 + 1}) -@}
+```
 ```haskell 
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys) 
 
+addWithCarry :: h1 : BinomialHeap a 
+  -> h2 : {BinomialHeap a | (bRank h2 == bRank h1 ||heapIsEmpty h1)|| heapIsEmpty h2}
+  -> carry : {BinomialBit a | ((not (heapIsEmpty h1)) => rank carry == bRank h1)
+                              && ((not (heapIsEmpty h2)) => rank carry == bRank h2)}
+  -> {b : BinomialHeap a | (not (heapIsEmpty b)) => rank (bhead b) == rank carry}
+/ [len h1 , len h2]
 ```
-
-```haskell {7-9} 
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys) 
-
-insertSort :: (Ord a) => List a -> List a
-insertSort Nil = Nil
-insertSort (Cons x xs) = insert x (insertSort xs)
-```
-
 ````
-
-
-</div>
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
+
 ---
 level: 2
-transition: fade-out
 ---
 
-## A Refinement Type for `insert`
+## Binomial Heap splitMin
 
-<div px-30 py-20>
 
 ````md magic-move {lines: true}
-
-```haskell {*|1} 
-{-@ insert :: x : _ -> {xs : _ | isSorted xs} -> {ys : _ | isSorted ys } @-}
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys) 
-
+```haskell
+{-@ splitMin :: h:{BinomialHeap a | bRank h == 0} -> MinView BinomialHeap a @-}
+splitMin :: (Ord a) => BinomialHeap a -> MinView BinomialHeap a
+splitMin heap =
+  if hasOnlyZeros heap
+    then EmptyView
+    else case extractMin heap of
+      (minPennant, restHeap) ->
+        let converted = case minPennant of
+              P _ 0 _ -> restHeap
+              P _ _ _ -> ...
+         in Min (root minPennant) converted
+```
+```haskell
+{-@ splitMin :: h:{BinomialHeap a | bRank h == 0} -> MinView BinomialHeap a @-}
+splitMin :: (Ord a) => BinomialHeap a -> MinView BinomialHeap a
+splitMin heap =
+  if hasOnlyZeros heap
+    then EmptyView
+    else case extractMin heap of
+      (minPennant, restHeap) ->
+        let converted = case minPennant of
+              P _ 0 _ -> restHeap
+              P _ _ _ -> case restHeap of
+                Nil -> reverseToBinomialHeap (dismantle (bin minPennant))
+                Cons _ _ -> bAdd restHeap (reverseToBinomialHeap (dismantle (bin minPennant)))
+         in Min (root minPennant) converted
 ```
 ````
 
-<div v-click mt-5>
-The <code>isSorted</code> predicate
-         doesn't exist yet <span v-mark.red="3">at the level of refinement logic </span> 🤔
-</div>
-
-</div>
+**Steps**: 
+1. Find minimum pennant (`extractMin`)
+2. Dismantle its tree (`dismantle`)
+3. Reverse to standard form (`reverseToBinomialHeap`)
+4. Merge with rest (`bAdd`)
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
+
 ---
 level: 2
-transition: fade-out
 ---
 
-## Lifting `isSorted` into the Refinement Logic
+## Dismantling and Reversing
 
-
-<div px-30 py-20>
+Converting binary tree back to heap for `splitMin`:
 
 ````md magic-move {lines: true}
-
-```haskell  
-isSorted :: (Ord a) => List a -> Bool
-isSorted Nil = True
-isSorted (Cons x xs) =
-  isSorted xs && case xs of
-    Nil -> True
-    Cons x1 xs1 -> x <= x1
+```haskell
+data ReversedBinomialHeap a =
+    RNil
+  | RCons { rhd :: BinomialBit a
+          , rtl :: {bs:ReversedBinomialHeap a | not (isRNil bs) =>
+                     rank (rbhead bs) = rank rhd - 1}}
 ```
-```haskell {*|1} 
-{-@ reflect isSorted @-}
-isSorted :: (Ord a) => List a -> Bool
-isSorted Nil = True
-isSorted (Cons x xs) =
-  isSorted xs && case xs of
-    Nil -> True
-    Cons x1 xs1 -> x <= x1
-```
+```haskell {*|7-17}
+data ReversedBinomialHeap a =
+    RNil
+  | RCons { rhd :: BinomialBit a
+          , rtl :: {bs:ReversedBinomialHeap a | not (isRNil bs) =>
+                     rank (rbhead bs) = rank rhd - 1}}
 
-```haskell {1-2} 
--- make sure you add this or enable reflection through cabal options
-{-@ LIQUID "--reflection" @-} 
-{-@ reflect isSorted @-}
-isSorted :: (Ord a) => List a -> Bool
-isSorted Nil = True
-isSorted (Cons x xs) =
-  isSorted xs && case xs of
-    Nil -> True
-    Cons x1 xs1 -> x <= x1
+{-@ dismantle :: Ord a => t:BinTree a -> {rh:ReversedBinomialHeap a | ValidDismantle t rh} @-}
+dismantle :: (Ord a) => BinTree a -> ReversedBinomialHeap a
+dismantle Empty = RNil
+dismantle (Bin m l r h) =
+  RCons (One h (P m h l)) (dismantle r)
+    `withProof` lemma_rlast_preserved ...
 ```
+```haskell {*|14-19}
+data ReversedBinomialHeap a =
+    RNil
+  | RCons { rhd :: BinomialBit a
+          , rtl :: {bs:ReversedBinomialHeap a | not (isRNil bs) =>
+                     rank (rbhead bs) = rank rhd - 1}}
 
-```haskell {1} 
-{-@ measure isSorted @-}
-isSorted :: (Ord a) => List a -> Bool
-isSorted Nil = True
-isSorted (Cons x xs) =
-  isSorted xs && case xs of
-    Nil -> True
-    Cons x1 xs1 -> x <= x1
+{-@ dismantle :: Ord a => t:BinTree a -> {rh:ReversedBinomialHeap a | ValidDismantle t rh} @-}
+dismantle :: (Ord a) => BinTree a -> ReversedBinomialHeap a
+dismantle Empty = RNil
+dismantle (Bin m l r h) =
+  RCons (One h (P m h l)) (dismantle r)
+    `withProof` lemma_rlast_preserved ...
+
+{-@ reverseToBinomialHeap ::
+      rh:{ReversedBinomialHeap a | ReversedEndsAtZero rh}
+   -> {h:BinomialHeap a | ValidReversed rh h}
+@-}
+reverseToBinomialHeap :: ReversedBinomialHeap a -> BinomialHeap a
 ```
 ````
-
-</div>
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
+
+---
+layout: section
+---
+
+# Results and Conclusions
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
+</div>
+
 ---
 level: 2
-transition: fade-out
 ---
 
-## Verifying sortedness in Haskell 
+## Verification Summary
+
+<br>
+
+<v-clicks>
+
+**Leftist Heaps** ✅ Fully verified
 
 
-<div px-30 py-20>
+- All operations: `empty`, `insert`, `merge`, `findMin`, `splitMin`
+- Key properties: heap invariant, leftist property, multiset preservation
+- Proof effort: Minimal lemmas (mostly transitivity)
 
-````md magic-move {lines: true}
+</v-clicks>
 
-```haskell  
-{-@ example1 :: {v: Bool | v} @-}
-example1 = isSorted (Cons 2 (Cons 1 Nil))
-```
-```haskell  {1-4}
+<br>
 
-{-@ type TRUE  = {v:Bool | v    } @-}
-{-@ type FALSE = { v: Bool | not v } @-}
+<v-clicks>
 
-{-@ example1 :: TRUE @-}
-example1 = isSorted (Cons 2 (Cons 1 Nil))
-```
+**Binomial Heaps** ⚠️ Partially verified
 
-```haskell  {6-16}
-{-@ type TRUE  = {v:Bool | v    } @-}
-{-@ type FALSE = { v: Bool | not v } @-}
 
-{-@ example1 :: TRUE @-}
-example1 = isSorted (Cons 2 (Cons 1 Nil))
- >> .
- >> The inferred type
- >>   VV : {v : GHC.Types.Bool | (v == Demo.Sorting.isSorted 
- >>             (Demo.Sorting.Cons (GHC.Num.Integer.IS 2) 
- >>             (Demo.Sorting.Cons (GHC.Num.Integer.IS 1) Demo.Sorting.Nil)))
- >> .
- >> is not a subtype of the required type
- >>   VV : {VV##2509 : GHC.Types.Bool | VV##2509}
-```
+- Core components: pennants, link, bit operations, dismantle/reverse
+- Verified: rank consistency, structural invariants
+- Remaining: some helper functions (`padWithZeros`), full bag proofs
 
-````
-</div>
+</v-clicks>
 
-<div class="absolute bottom-0  right-0 p-10">
-{{ $page }}
-</div>
+<br>
+
 ---
 level: 2
-transition: fade-out
 ---
+## Verification Summary
+**Key Techniques Used:**
 
-## Verifying sortedness in logic
+<v-clicks>
 
+- Refined data types encode invariants by construction
+- Intrisitc verification of operations
+- Measures and reflection for reasoning
+- PLE automates most equational reasoning
+- Explicit lemmas only for complex transitivity
 
-<div px-30 py-20>
-
-````md magic-move {lines: true}
-
-```haskell  
-{-@ example2 :: {v : () |  isSorted (Cons 1 (Cons 3  Nil)) == True} @-}
-example2 :: ()
-example2 = () -- Error: can't figure it out on its own
-```
-
-```haskell {1} 
-import Language.Haskell.Liquid.ProofCombinators
-{-@ example2 :: {isSorted (Cons 1 (Cons 3  Nil)) == True} @-}
-example2 :: ()
-example2 = ()
-```
-
-```haskell {5-9}  
-import Language.Haskell.Liquid.ProofCombinators
-{-@ example2 :: {isSorted (Cons 1 (Cons 3  Nil)) == True} @-}
-example2 :: ()
-example2 =
-  (isSorted (Cons 1 (Cons 3 Nil :: List Int)))
-    === (isSorted (Cons 3 Nil) && 1 <= 3)
-    === (isSorted (Nil :: List Int) && True && 1 <= 3)
-    === True
-    *** QED
-```
-```haskell {1}  
-{-@ LIQUID "--ple" @-} 
-{-@ example2 :: {isSorted (Cons 1 (Cons 3  Nil)) == True} @-}
-example2 :: ()
-example2 =
-  (isSorted (Cons 1 (Cons 3 Nil :: List Int)))
-    === (isSorted (Cons 3 Nil) && 1 <= 3)
-    === (isSorted (Nil :: List Int) && True && 1 <= 3)
-    === True
-    *** QED
-```
-```haskell   
-{-@ LIQUID "--ple" @-} 
-{-@ example2 :: {isSorted (Cons 1 (Cons 3  Nil)) == True} @-}
-example2 :: ()
-example2 = () -- LH can now evaluate it on it's own
-```
-
-````
-
-</div>
+</v-clicks>
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
 
 ---
-layout: default
 level: 2
-transition: fade-out
 ---
 
-## Insertion proof
+## Strengths of LiquidHaskell
 
+<br>
 
-<div px-30 py-10>
+<v-clicks>
 
-````md magic-move {lines: true}
+✅ **Stay in Haskell ecosystem** - No language switch, familiar syntax
 
-```haskell  {*|6} 
-{-@ insert :: x : _ -> {xs : _ | isSorted xs} -> {ys : _ | isSorted ys } @-}
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys)  -- LH can't figure this out
-```
+✅ **Automation** - SMT solver handles most proofs via PLE
 
-```haskell {6}  
-{-@ insert :: x : _ -> {xs : _ | isSorted xs} -> {ys : _ | isSorted ys } @-}
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys)  `withProof` lem_ins y x ys
-```
+✅ **Incremental adoption** - Can verify gradually, module by module
 
-```haskell {8-12|*}   
-{-@ insert :: x : _ -> {xs : _ | isSorted xs} -> {ys : _ | isSorted ys } @-}
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys)  `withProof` lem_ins y x ys
+✅ **Type-driven** - Invariants in types catch errors at compile time
 
-{-@ lem_ins :: y : _ -> {x : _ | y < x} -> {ys : _ | isSorted (Cons y ys)} 
-    -> {isSorted (Cons y (insert x ys))} @-}
-lem_ins :: (Ord a) => a -> a -> List a -> Bool
-lem_ins y x Nil = True
-lem_ins y x (Cons y1 ys) = if y1 < x then lem_ins y1 x ys else True
-```
+✅ **Minimal annotation** - Less verbose than Coq/Agda for many properties
 
-```haskell{2,3}
-{-@ reflect insert @-}
-{-@ insert :: x : _ -> {xs : _ | isSorted xs} 
-    -> {ys : _ | isSorted ys && Map_union (singelton x) (bag xs) == bag ys  } @-}
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys) `withProof` lem_ins y x ys
+</v-clicks>
 
-{-@ lem_ins :: y : _ -> {x : _ | y < x} -> {ys: _ | isSorted (Cons y ys)} 
-    -> {isSorted (Cons y (insert x ys))} @-}
-lem_ins :: (Ord a) => a -> a -> List a -> Bool
-lem_ins y x Nil = True
-lem_ins y x (Cons y1 ys) = if y1 < x then lem_ins y1 x ys else True
-```
+<br>
+   
+<v-clicks>
 
-```haskell{2-3,16-19}
-{-@ reflect insert @-}
-{-@ insert :: x : _ -> {xs : _ | isSorted xs} 
-    -> {ys : _ | isSorted ys && Map_union (singelton x) (bag xs) == bag ys  } @-}
-insert :: (Ord a) => a -> List a -> List a
-insert x Nil = Cons x Nil
-insert x (Cons y ys)
-  | x <= y = Cons x (Cons y ys)
-  | otherwise = Cons y (insert x ys) `withProof` lem_ins y x ys
+**Comparison to alternatives:**
+- **vs. Coq/Agda**: More automation, less learning curve
+- **vs. Dafny**: Stays in functional paradigm, better for FP
+- **vs. Testing**: Static guarantees, exhaustive checking
 
-{-@ lem_ins :: y : _ -> {x : _ | y < x} -> {ys: _ | isSorted (Cons y ys)} 
-    -> {isSorted (Cons y (insert x ys))} @-}
-lem_ins :: (Ord a) => a -> a -> List a -> Bool
-lem_ins y x Nil = True
-lem_ins y x (Cons y1 ys) = if y1 < x then lem_ins y1 x ys else True
-
-{-@ insertSort :: xs : _ -> {ys : _ | isSorted ys && bag xs == bag ys} @-}
-insertSort :: (Ord a) => List a -> List a
-insertSort Nil = Nil
-insertSort (Cons x xs) = insert x (insertSort xs)
-```
-
-````
-<div v-click="[4, 5]"  >But are the elements of the sorted list the same as those of the original list?</div>
-</div>
+</v-clicks>
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
+
 ---
+level: 2
 ---
 
-# Refinement Data Type 
+## Limitations & Challenges
 
-<div px-30 py-10>
+<br>
 
-````md magic-move {lines: true}
+<v-clicks>
 
-```haskell  
-data IncList a =
-    Emp
-  | (:<) { hd :: a, tl :: IncList a }
+⚠️ **Type class limitations** - Cannot refine type class methods directly
 
-infixr 9 :<
-```
-```haskell {7-9} 
-data IncList a =
-    Emp
-  | (:<) { hd :: a, tl :: IncList a }
+⚠️ **Error messages** - Can be cryptic when verification fails
 
-infixr 9 :<
+⚠️ **SMT solver timeouts** - Complex properties may need manual guidance
 
-{-@ data IncList a =
-        Emp
-      | (:<) { hd :: a, tl :: IncList {v:a | hd <= v}}  @-}
-```
-```haskell {11-15} 
-data IncList a =
-    Emp
-  | (:<) { hd :: a, tl :: IncList a }
+⚠️ **Mutual recursion** - Requires careful termination metrics
 
-infixr 9 :<
+⚠️ **Learning curve** - Understanding when to add lemmas takes practice
 
-{-@ data IncList a =
-        Emp
-      | (:<) { hd :: a, tl :: IncList {v:a | hd <= v}}  @-}
+</v-clicks>
+<br>
 
-okList :: IncList Int
-okList  = 1 :< 2 :< 3 :< Emp      -- accepted by LH
+<v-clicks>
 
-badList :: IncList Int
-badList = 2 :< 1 :< 3 :< Emp      -- rejected by LH
-```
-````
-</div>
+**Workarounds:**
+- Use concrete functions instead of type classes
+- Break complex proofs into smaller lemmas
+- Use reflection judiciously
+- Leverage community knowledge and examples
+
+</v-clicks>
 
 <div class="absolute bottom-0  right-0 p-10">
 {{ $page }}
 </div>
+
 ---
 layout: two-cols
 ---
 
-# Learn More
+# Learn More & Questions
 
-- [GitHub (code examples and seminar report)](https://github.com/m3hransh/seminar-pl) 
-- [LiquidHaskell Documentation](https://ucsd-progsys.github.io/liquidhaskell/) 
-- [Z3 Docs](https://z3prover.github.io/papers/programmingz3.html) 
-- [Update Tutorial](https://nikivazou.github.io/lh-course/)
-<footer class="absolute bottom-0 left-0 right-0 p-10">
-<PoweredBySlidev mt-10 />
-</footer>
+<br>
+
+**Thesis & Code:**
+- [GitHub Repository](https://github.com/m3hransh/pq_verification)
+- Full thesis with all proofs
+- Complete verified implementations
+
+<br>
+
+**Resources:**
+- [LiquidHaskell Documentation](https://ucsd-progsys.github.io/liquidhaskell/)
+- [Updated Tutorial](https://nikivazou.github.io/lh-course/)
+- [Z3 SMT Solver](https://z3prover.github.io/)
+
+<br>
+
+**Questions?**
+
 ::right::
 
-<div py-20 px-20>
-<img  src="./images/qr-code.png">
+<div py-20 px-10>
 
+# Thank You!
+
+<br>
+<br>
+
+**Special thanks to:**
+- Prof. Dr. Ralf Hinze
+- LiquidHaskell community
+- Reviewers and colleagues
+
+</div>
+
+<div class="absolute bottom-0  right-0 p-10">
+{{ $page }}
 </div>
